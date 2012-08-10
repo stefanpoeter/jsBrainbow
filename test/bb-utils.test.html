@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <script src="http://code.jquery.com/jquery-latest.js"></script>
+        <link rel="stylesheet" href="qunit/qunit.css" type="text/css" media="screen" />
+        <script type="text/javascript" src="qunit/qunit.js"></script>
+        <script type="text/javascript" src="../lib/sylvester.js"></script>
+        <script src="../js/bb-sequence.js"></script>
+        <script src="../js/bb-utils.js"></script>
+
+        <script>
+            $(document).ready(function(){
+
+
+                module("BB-Utils API");
+
+                test("Simple elements count", function() {
+                    
+                    var count = SeqUtils('+A -B 1 ! -A 2 ! -B 4').count();
+                    
+                    equal(count.lox, 4);
+                    equal(count.col, 3);
+                    equal(count.term, 2);
+                    
+                });
+                
+                test("Get Lox-Site positions", function() {
+                    
+                    var sites = SeqUtils('+A +1 -2 -A +B -B +A 3 -4 -A').getLoxSites();
+                        
+                    equal(sites.invert.length, 5);
+                    
+                    deepEqual(sites.invert, [
+                        { from: 0, to: 3},
+                        { from: 0, to: 9},
+                        { from: 3, to: 6},
+                        { from: 4, to: 5},
+                        { from: 6, to: 9} ]);
+                    
+                    equal(sites.cut.length, 2);
+                    
+                    deepEqual(sites.cut, [
+                        { from: 0, to: 6 },
+                        { from: 3, to: 9 }]);
+                    
+                });
+                
+                test("Get all possible permutations", function() {
+                    
+                    var all1 = SeqUtils('+A +1 -2 -A').getAllPermutations(),
+                        all2 = SeqUtils('+A +1 -A').getAllPermutations(),
+                        all3 = SeqUtils('+A +B +1 -A +2 +B').getAllPermutations(),
+                        all4 = SeqUtils('+A +1 -2 -A +A +3 -4 -A').getAllPermutations(),
+                        all5 = SeqUtils(Sequence('+A +B +1')).getAllPermutations();
+                        
+                    equal(all1.length, 2);
+                    equal(all2.length, 2);
+                    equal(all3.length, 4);
+                    equal(all4.length, 12);
+                    equal(all5.length, 1);
+                                       
+                });
+                
+                test("Get transition matrix", function() {
+                    
+                    var m1 = SeqUtils("+A +1 -2 -A").getTransMatrix(),
+                        m2 = SeqUtils("+A +1 -2 -A +B +3 -4 -B").getTransMatrix(),
+                        m3 = SeqUtils('+A +B +A +1 +B +2').getTransMatrix();
+                        
+                    deepEqual(m1,
+                        [
+                            [0, 1],
+                            [1, 0]
+                        ]);
+                        
+                    deepEqual(m2,
+                        [
+                            [0, 0.5, 0.5, 0],
+                            [0.5, 0, 0, 0.5],
+                            [0.5, 0, 0, 0.5],
+                            [0, 0.5, 0.5, 0]
+                        ]);
+                        
+                    deepEqual(m3,
+                        [
+                            [0, 0.5, 0.5],
+                            [0, 1, 0],
+                            [0, 0, 1]
+                        ]
+                    );
+                });
+                
+                test("Calculate sequence probabilities", function() {
+                    
+                    var prob1 = SeqUtils('+A +1 +! -! -2 -A').calcProbs(),
+                        prob2 = SeqUtils('+A +1 +! -! -2 -A +B +3 +! -! -4 -B').calcProbs(),
+                        prob3 = SeqUtils('+A +1 +! -! -2 -A +A +3 +! -! -4 -A').calcProbs(),
+                        prob4 = SeqUtils('+A +B +C +A +1 +! +B +2 +! +C +3 +!').calcProbs(),
+                        prob5 = SeqUtils('+A -A').calcProbs();
+                        
+                    equal(prob1.length, 2);
+                    
+                    deepEqual(prob1, [
+                        { seqString : '+1', prob : '0.50'}, 
+                        { seqString : '+2', prob : '0.50' } ]);
+                    
+                    equal(prob2.length, 2);
+                    deepEqual(prob2, [ 
+                        { seqString : '+1', prob : '0.50'},
+                        { seqString : '+2', prob : '0.50'} ]);
+                        
+                    equal(prob3.length, 4);
+                    deepEqual(prob3, [
+                        { seqString : '+1', prob : '0.25'},
+                        { seqString : '+2', prob : '0.25'},
+                        { seqString : '+3', prob : '0.25'},
+                        { seqString : '+4', prob : '0.25'}]);
+                        
+                    equal(prob4.length, 3);
+                    deepEqual(prob4, [
+                        { seqString : '+1', prob : '0.33' },
+                        { seqString : '+2', prob : '0.33' },
+                        { seqString : '+3', prob : '0.33' }]);
+                        
+                    equal(prob5.length, 1);
+                    deepEqual(prob5, [
+                        { seqString : 'nothing', prob : '1.00'}]);
+                                        
+                });
+                
+                
+            });
+        </script>
+  
+    </head>
+<body>
+    <h1 id="qunit-header">QUnit example</h1>
+    <h2 id="qunit-banner"></h2>
+    <div id="qunit-testrunner-toolbar"></div>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+    <div id="qunit-fixture">test markup, will be hidden</div>
+</body>
+</html>

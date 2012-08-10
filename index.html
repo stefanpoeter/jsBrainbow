@@ -1,0 +1,140 @@
+<html>
+
+    <head>
+        <script type="text/javascript" src="lib/jquery-1.6.2.min.js"></script>
+        <script type="text/javascript" src="lib/raphael-min.js"></script>
+        <script type="text/javascript" src="js/bb-sequence.js"></script>
+        <script type="text/javascript" src="js/bb-utils.js"></script>
+        <script type="text/javascript" src="js/bb-raphael.js"></script>
+        
+        <link type="text/css" rel="stylesheet" href="style/main.css" />
+    
+        <title>Visualisation Tool For Brainbow-Like Sequences</title>
+    </head>
+    
+    <body>
+    
+        <div id="input">
+            <input type="text" id="sequence" />
+            <input type="button" id="solve" value="Solve" />
+            <input type="button" id="store" value="Store" />
+            <p id="results" class="info"></p>
+        </div>
+        
+        <div id="storage">
+        
+        </div>
+    
+        <div id="draw">
+        </div>
+        
+        <script type="text/javascript">
+
+            $(document).ready(function() {
+                var paper = Raphael(document.getElementById('draw')),
+                    seqUI = SequenceUI(paper, paper.width / 2, 100);
+                    
+                var keyinput = "sequences";
+                var valinput = JSON.stringify(['+A +B +C +A +1 +! +B +2 +! +C +3 +!', '+A +1 +! -! -2 -A', '+A +1 +! -! -2 -A +A +3 +! -! -4 -A']);
+                if(typeof(window.localStorage) != 'undefined'){ 
+                    var ls = window.localStorage,
+                        seqs = ls.getItem(keyinput);
+                    
+                    if (!seqs) {
+            	        ls.setItem(keyinput,valinput);
+                    };
+                    
+                    seqs = jQuery.parseJSON(ls.getItem(keyinput));
+                    
+                    $('#store').click( function(e) {
+                        var val = $('#sequence').val();
+                        
+                        seqs.push(val);
+                        ls.setItem(keyinput, JSON.stringify(seqs));
+                        loadList();
+                    });
+                    
+                    
+                    var loadList = function() {
+                        $('#storage').empty();
+                        for (var s in seqs) {
+                            var cont = $('<div></div>'),
+                                elem = $('<p>' + seqs[s] + '</p>'),
+                                rem = $('<p class="remItem">Remove</p>');
+                                
+                            cont.append(elem, rem);
+                            
+                            elem.click( (function(index) {
+                                return function() {
+                                    $('#sequence').val(seqs[index]);
+                                    $('#sequence').keyup();
+                                }
+                            })(s));
+                            
+                            rem.click( (function(index) {
+                                return function() {
+                                    seqs.splice(index, 1);
+                                    ls.setItem(keyinput, JSON.stringify(seqs));
+                                    loadList();
+                                }
+                            })(s));
+                            
+                            $('#storage').append(cont);   
+                        }
+                    }
+                    
+                    loadList();
+                    
+    
+    		    } 
+    		    else{ 
+    			    $('#storgae').append('<span>Local Storage not supported</span>'); 
+    		    }                    
+                    
+                    
+                $('#sequence').keyup(function() {
+                    var value = $('#sequence').val(),
+                        seq = Sequence(value);
+                    seqUI.setSequence(seq);
+                    
+                    // this should not be necessary!!
+                    seqUI.draw();
+                    
+                    // center sequence
+                    seqUI.moveTo(paper.width / 2 - (seqUI.getWidth() / 2), seqUI.getPosition().y);
+
+                });
+                
+                if (Worker) {
+                    var robot = new Worker('js/bb-webworker.js');
+                
+                    robot.onmessage = function(event){
+                        //console.log(event.data);
+                        var s = "";
+                        for (var o in event.data) {
+                            var e = event.data[o];
+                            var prop = e.prob;
+                            var sStr = e.seqString;
+                            s += (sStr + " : " + prop) + "</br>";
+                        }
+                        $("#results").html(s);
+                    };
+    
+                    $('#solve').click( function(e) {
+                        var val = $('#sequence').val();
+                        
+                        console.log("Sending " + val + " to Webworker");
+                        
+                        robot.postMessage(val);
+                    });
+                } else {
+                    $('#solve').disable(); 
+                    $('#input .info').html("Your Browser didn't support WebWorker, try another Browser!");
+                }
+            
+            });
+        </script>
+    
+    </body>
+
+</html>

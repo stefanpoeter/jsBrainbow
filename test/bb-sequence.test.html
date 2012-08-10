@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <script src="http://code.jquery.com/jquery-latest.js"></script>
+        <link rel="stylesheet" href="qunit/qunit.css" type="text/css" media="screen" />
+        <script type="text/javascript" src="qunit/qunit.js"></script>
+        <script src="../js/bb-sequence.js"></script>
+
+        <script>
+            $(document).ready(function(){
+
+
+                module("Sequence initiation");
+
+                test("Try to initiate some sequences", function() {
+                    
+                    // valid simple sequences
+                    equal(Sequence('+A'), "+A");
+                    equal(Sequence('+1'), "+1");
+                    equal(Sequence('-1'), "-1");
+                    equal(Sequence('-A'), "-A");
+                    equal(Sequence('+AA'), "+AA");
+                    equal(Sequence('+11'), "+11");
+                    equal(Sequence('+!'), "+!");
+                    equal(Sequence('!'), "+!");
+                    
+                    equal(Sequence('  +A  '), "+A");
+                    equal(Sequence(' -1 '), "-1");
+                    
+                    equal(Sequence('A'), "+A");
+                    equal(Sequence('1'), "+1");
+                    
+                    // invalid simple sequences
+                    equals(Sequence('+a12a'), "");
+                    equals(Sequence('a12a'), "");
+                    equals(Sequence('12!ac3'), "");
+
+                    // lets do some concatenation
+                    equals(Sequence('+A -1'), "+A -1");
+                    equals(Sequence('   -B A   +1  -2    1 +A  '), '-B +A +1 -2 +1 +A');
+                    equals(Sequence('A 1 ! -! -2 -A A -3 -! ! 4 -A'), '+A +1 +! -! -2 -A +A -3 -! +! +4 -A');
+                    
+                    
+                    
+                });
+                
+                module("Sequence manipulations");
+                
+                test("Sequence permutations", 5, function() {
+
+                    var perm1 = Sequence('A 1 -2 -A').getPermutations();
+                        
+                    equal(perm1.length, 1);
+                    
+                    equal(perm1[0], '+A +2 -1 -A');
+                        
+                    var perm2 = Sequence('A 1 B -2 A -B').getPermutations();
+                    
+                    equal(perm2.length, 2);
+                    
+                    equal(perm2[0], '+A -B');
+                    equal(perm2[1], '+A +1 +B -A +2 -B');
+                            
+                    
+                });
+                
+                test("Sequence evaluation", 3, function() {
+
+                    var ev1 = Sequence('+A -1 +2 ! -A').evaluate();
+                    equal(ev1, '+2');
+                        
+                    var ev2 = Sequence('+2 -3 +1 -A !').evaluate();
+                    equal(ev2, '+2 +1');
+                            
+                    var ev3 = Sequence('+A !').evaluate();
+                    equal(ev3, '');
+                        
+                });
+                
+                test("Sequence normalization", 1, function() {
+                    
+                    var seq = Sequence('D C B A -A -B -C -D').normalize();
+                    equals(seq, '+A +B +C +D -D -C -B -A');
+                
+                });
+                
+                test("Sequence comparison", function() {
+                    var seq1 = Sequence("A 1 -2 -A"),
+                        seq2 = Sequence("+A +1 -2 -A"),
+                        seq3 = Sequence("+A -1");
+                    
+                    ok(seq1.equals(seq2));
+                    ok(!seq2.equals(seq3));
+                    
+                });
+    
+                
+            });
+        </script>
+  
+    </head>
+<body>
+    <h1 id="qunit-header">QUnit example</h1>
+    <h2 id="qunit-banner"></h2>
+    <div id="qunit-testrunner-toolbar"></div>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+    <div id="qunit-fixture">test markup, will be hidden</div>
+</body>
+</html>
